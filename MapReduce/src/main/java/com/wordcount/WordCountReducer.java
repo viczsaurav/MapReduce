@@ -7,7 +7,7 @@ public class WordCountReducer implements Reducer<String, Integer, String, Intege
 
 	private static final long serialVersionUID = -3904724828336643593L;
 
-	public void reducer(String word, Iterable<Integer> values, JobContext<String,Integer> cntxt) {
+	public void reduce(String word, Iterable<Integer> values, JobContext<String,Integer> cntxt) {
 		
 		int totalVal=0;
 		
@@ -15,7 +15,5 @@ public class WordCountReducer implements Reducer<String, Integer, String, Intege
 			totalVal+=i;
 		}		
 		cntxt.write(word, new Integer(totalVal));
-
 	}
-
 }

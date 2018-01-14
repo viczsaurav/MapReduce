@@ -1,10 +1,15 @@
 package com.mapreduce;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 public class JobContext<Key extends Comparable<Key>, Value> {
@@ -17,15 +22,11 @@ public class JobContext<Key extends Comparable<Key>, Value> {
 	String outPath;
 	String inFile;
 	
-	Class mapperClass =null;
-	Class reducerClass=null;
+	Mapper mapperClass =null;
+	Reducer reducerClass=null;
 	
 	List<KeyValPair<Key,Value>> mapList = new ArrayList<KeyValPair<Key,Value>>();
-	List<KeyValPair<Key,Value>> redList = new ArrayList<KeyValPair<Key,Value>>();
-	
-	public JobContext () {
-		this.outPath=null;
-	}
+	Map<Key, Value> redList = new HashMap<>();
 	
 	public JobContext(String infile, String outPath) {
 		System.out.println("Setting Context..");
@@ -39,28 +40,63 @@ public class JobContext<Key extends Comparable<Key>, Value> {
 		System.out.println("Setting Context..");
 		this.inFile=infile;
 		this.outPath=outPath;
-		this.numOfMap 	 = (DEFAULT_NUM_MAPPER > numOfMap) 		? DEFAULT_NUM_MAPPER:numOfMap;		// Default have 1 Mapper
-		this.numOfReduce = (DEFAULT_NUM_REDUCR > numOfReduce) 	? DEFAULT_NUM_REDUCR:numOfReduce;		// Default have 1 Reducer
+		this.numOfMap 	 = (DEFAULT_NUM_MAPPER > numOfMap) 		? DEFAULT_NUM_MAPPER:numOfMap;			// >= Deafult Mapper Value
+		this.numOfReduce = (DEFAULT_NUM_REDUCR > numOfReduce) 	? DEFAULT_NUM_REDUCR:numOfReduce;		// >= Default Reducer Value
 	}
 
-	public void setMapper(Class mapper) {
+	public void setMapper(Mapper mapper) {
 		this.mapperClass = mapper;
 	}
 	
-	public void setReducer(Class reducer) {
+	public void setReducer(Reducer reducer) {
 		this.reducerClass = reducer;
 	}
-	public void parseInFile() {
+	
+	public void submit() throws Exception {
+		this.parseAndMap();					//Parse File and Map Values
+		this.reduceAndWrite();				//Reduce Mapped values and Write to outfile
+	}
+	public void parseAndMap() throws Exception {
 		// Parse File
-		// Call user defined Map Method
+		try (BufferedReader br = new BufferedReader(new FileReader(this.inFile))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+            	this.mapperClass.map(line, 1, this);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+	}
+	
+	public void reduceAndWrite() throws Exception {
+		
+		Collections.sort(mapList);
+		
+		List<Value> valList=null;
+		Key lastKey=null;
+		
+		for (KeyValPair<Key, Value> kv : mapList) {
+			if (lastKey.compareTo(kv.getKey())==0) {
+				valList.add(kv.getVal());
+			}
+			else {
+				if (null!=lastKey) {
+					this.reducerClass.reduce(kv.getKey(), Arrays.asList(valList), this);					
+				}
+				valList = new ArrayList<>();
+				valList.add(kv.getVal());
+				lastKey=kv.getKey();
+			}
+		}
 	}
 	
 	public void write(Key key, Value val) {
 		if (this instanceof Mapper) {
-			this.mapList.add(new KeyValPair<Key,Value>(key, val));			
+			this.mapList.add(new KeyValPair<Key,Value>(key, val));
+			System.out.println("Mapping Values..");
 		}
 		if (this instanceof Reducer) {
-			this.redList.add(new KeyValPair<Key, Value>(key, val));
+			this.redList.put(key,val);
 		}
 	}
 	
@@ -84,15 +120,15 @@ public class JobContext<Key extends Comparable<Key>, Value> {
 		try {
 			if (this.numOfMap==DEFAULT_NUM_MAPPER) {
 				PrintWriter writer = new PrintWriter(file);
-				for (KeyValPair<Key,Value> p:redList) {
-					writer.println(p.getKey() + " " + p.getVal());
+				for (Map.Entry<Key, Value> p:redList.entrySet()) {
+					writer.println(p.getKey() + " " + p.getValue());
 				}
 				writer.close();
 			}
 			else {
 				// Implement multi-threaded write
 				System.out.println("Multiple threads writing");
-				Collections.sort(redList);
+				
 //				ExecutorService exSrvc = Executors.newFixedThreadPool(this.numOfMap);
 				
 //				exSrvc.execute(command);

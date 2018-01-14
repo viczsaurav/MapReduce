@@ -1,12 +1,5 @@
 package com.wordcount;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.List;
-
 import com.mapreduce.JobContext;
 
 public class WordCountMain {
@@ -30,20 +23,9 @@ public class WordCountMain {
 			else
 				cntxt = new JobContext<>(inpath,outPath);
 			
-			// Setting Mapper
-			WordCountMapper wcMap = new WordCountMapper();
-			try (BufferedReader br = new BufferedReader(new FileReader(inpath))) {
-	            String line;
-	            while ((line = br.readLine()) != null) {
-	            	wcMap.map(line, 1, cntxt);
-	            }
-	        } catch (IOException e) {
-	            e.printStackTrace();
-	        }
-
-			// Setting Reducer
-			WordCountReducer wcReducer = new WordCountReducer();
-//			wcReducer.reducer(word, values, cntxt);
+			cntxt.setMapper(new WordCountMapper());
+			cntxt.setReducer(new WordCountReducer());
+			cntxt.submit();
 			
 		}
 		
