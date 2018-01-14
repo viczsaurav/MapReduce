@@ -44,7 +44,7 @@ public class JobContext<Key extends Comparable<Key>, Value>{
 	
 //	Making write threadsafe for multiple thread access 
 	public synchronized void write(Key key, Value val) {
-		this.kvList.add(new KeyValPair(key, val));
+		this.kvList.add(new KeyValPair<Key,Value>(key, val));
 	}
 	
 	
