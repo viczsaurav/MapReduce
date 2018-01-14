@@ -2,37 +2,37 @@ package com.mapreduce;
 
 import java.io.Serializable;
 
-public class KeyValPair implements Serializable{
+public class KeyValPair<Key extends Comparable<Key>, Value > implements Serializable, Comparable<KeyValPair<Key, Value >>{
 
 
 	private static final long serialVersionUID = -8876016438486040415L;
 	
-	private String key;
-	private float val=0.0f;
+	private Key key;
+	private Value val;
 	
-	public KeyValPair (String key, float val) {
+	public KeyValPair (Key key, Value val) {
 		this.key=key;
 		this.val=val;
 	}
 	
-	public String getKey() {
+	public Key getKey() {
 		return key;
 	}
 
-	public void setKey(String key) {
+	public void setKey(Key key) {
 		this.key = key;
 	}
 
-	public float getVal() {
+	public Value getVal() {
 		return val;
 	}
 
-	public void setVal(float val) {
+	public void setVal(Value val) {
 		this.val = val;
 	}
 
-	public int compareTo(KeyValPair other) {
-		return this.key.compareToIgnoreCase(other.key);
+	public int compareTo(KeyValPair<Key,Value> othr) {
+		return key.compareTo(othr.key);
 	}
 	
 	

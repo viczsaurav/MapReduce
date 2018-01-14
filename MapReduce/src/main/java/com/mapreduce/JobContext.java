@@ -3,12 +3,12 @@ package com.mapreduce;
 import java.util.ArrayList;
 import java.util.List;
 
-public class JobContext{
+public class JobContext<Key extends Comparable<Key>, Value>{
 	int numOfMap;
 	int numOfReduce;
 	String outPath;
 	
-	List<KeyValPair> kvList = new ArrayList<KeyValPair>();
+	List<KeyValPair<Key,Value>> kvList = new ArrayList<KeyValPair<Key,Value>>();
 	
 	public JobContext () {
 		this.outPath=null;
@@ -43,7 +43,7 @@ public class JobContext{
 	}
 	
 //	Making write threadsafe for multiple thread access 
-	public synchronized void write(String key, float val) {
+	public synchronized void write(Key key, Value val) {
 		this.kvList.add(new KeyValPair(key, val));
 	}
 	
