@@ -12,7 +12,7 @@ public class WordCountMapper implements Mapper<String, Integer>{
 		System.out.println("Calling User map method..");
 		String[] words = line.split(" ");
 		for (String word:words) {
-			cntxt.write(word, 1);
+			cntxt.map(word, 1);
 		}
 	}
 

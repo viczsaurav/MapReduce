@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 
 public class JobContext<Key extends Comparable<Key>, Value> {
@@ -26,7 +27,7 @@ public class JobContext<Key extends Comparable<Key>, Value> {
 	Reducer reducerClass=null;
 	
 	List<KeyValPair<Key,Value>> mapList = new ArrayList<KeyValPair<Key,Value>>();
-	Map<Key, Value> redList = new HashMap<>();
+	TreeMap<Key, Value> redList = new TreeMap<>();
 	
 	public JobContext(String infile, String outPath) {
 		System.out.println("Setting Context..");
@@ -71,13 +72,17 @@ public class JobContext<Key extends Comparable<Key>, Value> {
 		Key lastKey=null;
 		
 		for (KeyValPair<Key, Value> kv : mapList) {
-			if (lastKey.compareTo(kv.getKey())==0) {
+			if (null==lastKey) {
+				valList = new ArrayList<>();
+				valList.add(kv.getVal());
+				lastKey=kv.getKey();
+				continue;
+			}
+			if (kv.getKey().compareTo(lastKey)==0) {
 				valList.add(kv.getVal());
 			}
 			else {
-				if (null!=lastKey) {
-					this.reducerClass.reduce(kv.getKey(), Arrays.asList(valList), this);					
-				}
+				this.reducerClass.reduce(lastKey, valList, this);					
 				valList = new ArrayList<>();
 				valList.add(kv.getVal());
 				lastKey=kv.getKey();
@@ -86,27 +91,25 @@ public class JobContext<Key extends Comparable<Key>, Value> {
 		this.writeToFile();
 	}
 	
-	public void write(Key key, Value val) {
-		if (this instanceof Mapper) {
-			this.mapList.add(new KeyValPair<Key,Value>(key, val));
-			System.out.println("Mapping Values..");
-		}
-		if (this instanceof Reducer) {
-			this.redList.put(key,val);
-			System.out.println("Reducing Values..");
-		}
+	public void map(Key key, Value val) {
+		this.mapList.add(new KeyValPair<Key,Value>(key, val));
+		System.out.println("Mapping Values..");
+	}
+	
+	public void reduce(Key key, Value val) {
+		this.redList.put(key,val);
+		System.out.println("Reducing Values..");
 	}
 	
 	// Writing to File (Overloaded Method)
 	public void writeToFile() throws Exception {
+		System.out.println("Writing to file..");
 		if (null==this.outPath) {
 			System.out.println("Empty Output Path");
 			return;
 		}
-
-		else if (this instanceof Reducer) {
-			outPath = outPath + File.pathSeparator+"reduce";
-		}
+		outPath = outPath + File.separator+"reduce";
+		
 		File file = new File(this.outPath);
 		if (!file.exists())
 			file.getParentFile().mkdirs();
@@ -116,6 +119,7 @@ public class JobContext<Key extends Comparable<Key>, Value> {
 	public void writeToFile(File file) throws Exception {
 		try {
 			if (this.numOfMap==DEFAULT_NUM_MAPPER) {
+				System.out.println("Writing to file : "+ file.getAbsolutePath());
 				PrintWriter writer = new PrintWriter(file);
 				for (Map.Entry<Key, Value> p:redList.entrySet()) {
 					writer.println(p.getKey() + " " + p.getValue());

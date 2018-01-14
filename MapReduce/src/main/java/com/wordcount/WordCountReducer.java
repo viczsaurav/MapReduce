@@ -12,8 +12,8 @@ public class WordCountReducer implements Reducer<String, Integer, String, Intege
 		int totalVal=0;
 		
 		for (Integer i :values) {
-			totalVal+=i;
+			totalVal+=i.intValue();
 		}		
-		cntxt.write(word, new Integer(totalVal));
+		cntxt.reduce(word, new Integer(totalVal));
 	}
 }
