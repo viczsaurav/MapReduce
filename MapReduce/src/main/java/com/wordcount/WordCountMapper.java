@@ -9,6 +9,7 @@ public class WordCountMapper implements Mapper<String, Integer>{
 
 	public void map(String line,Integer val, JobContext<String,Integer> cntxt) throws Exception {
 		
+		System.out.println("Calling User map method..");
 		String[] words = line.split(" ");
 		for (String word:words) {
 			cntxt.write(word, 1);

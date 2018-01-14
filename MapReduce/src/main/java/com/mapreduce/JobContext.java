@@ -35,20 +35,14 @@ public class JobContext<Key extends Comparable<Key>, Value> {
 		this.numOfMap 	 = DEFAULT_NUM_MAPPER;		// Default Mapper
 		this.numOfReduce = DEFAULT_NUM_REDUCR;		// Default Reducer
 	}
-	
-	public JobContext(String infile, String outPath, int numOfMap, int numOfReduce) {
-		System.out.println("Setting Context..");
-		this.inFile=infile;
-		this.outPath=outPath;
-		this.numOfMap 	 = (DEFAULT_NUM_MAPPER > numOfMap) 		? DEFAULT_NUM_MAPPER:numOfMap;			// >= Deafult Mapper Value
-		this.numOfReduce = (DEFAULT_NUM_REDUCR > numOfReduce) 	? DEFAULT_NUM_REDUCR:numOfReduce;		// >= Default Reducer Value
-	}
 
 	public void setMapper(Mapper mapper) {
+		System.out.println("Setting Mappeer..");
 		this.mapperClass = mapper;
 	}
 	
 	public void setReducer(Reducer reducer) {
+		System.out.println("Setting Reducer..");
 		this.reducerClass = reducer;
 	}
 	
@@ -58,6 +52,7 @@ public class JobContext<Key extends Comparable<Key>, Value> {
 	}
 	public void parseAndMap() throws Exception {
 		// Parse File
+		System.out.println("Parsing input file: "+ this.inFile);
 		try (BufferedReader br = new BufferedReader(new FileReader(this.inFile))) {
             String line;
             while ((line = br.readLine()) != null) {
@@ -88,6 +83,7 @@ public class JobContext<Key extends Comparable<Key>, Value> {
 				lastKey=kv.getKey();
 			}
 		}
+		this.writeToFile();
 	}
 	
 	public void write(Key key, Value val) {
@@ -97,6 +93,7 @@ public class JobContext<Key extends Comparable<Key>, Value> {
 		}
 		if (this instanceof Reducer) {
 			this.redList.put(key,val);
+			System.out.println("Reducing Values..");
 		}
 	}
 	
