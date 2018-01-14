@@ -17,7 +17,7 @@ public class WordCountMain {
 		try {
 			inpath = args[0];
 			outPath = args[1];
-			String numMapReduce = args[1];
+			String numMapReduce = args[2];
 			if (null!=numMapReduce)
 				cntxt = new JobContext<>(inpath, outPath, Integer.parseInt(numMapReduce), Integer.parseInt(numMapReduce));
 			else
