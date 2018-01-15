@@ -15,12 +15,8 @@ public class WordCountMain {
 		String outPath=null;
 		
 		try {
-			if (args.length==2) {
-				inpath = args[0];
-				outPath = args[1];				
-			} else {
-				
-			}
+			inpath = args[0];
+			outPath = args[1];				
 
 			cntxt = new JobContext<>(inpath,outPath);
 			cntxt.setMapper(new WordCountMapper());
