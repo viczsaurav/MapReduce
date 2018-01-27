@@ -12,21 +12,23 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 
 public class JobContext<Key extends Comparable<Key>, Value> {
 	
-	final static int DEFAULT_NUM_MAPPER=2;
-	final static int DEFAULT_NUM_REDUCR=2;
+	final static int DEFAULT_NUM_MAPPER=2;			// Change this for controlling number of Mapper threads
+	final static int DEFAULT_NUM_REDUCR=2;			// Change this for controlling number of Reducer threads
 	
 	private int numOfMap=0;
 	private int numOfReduce=0;
 	private String outPath;
 	private String inFile;
 	
+	@SuppressWarnings("rawtypes")
 	private Mapper mapperClass =null;
+	
+	@SuppressWarnings("rawtypes")
 	private Reducer reducerClass=null;
 	
 	// Using Concurrent List and Concurrent Map to provide thread safety in case of multiple thread access 
