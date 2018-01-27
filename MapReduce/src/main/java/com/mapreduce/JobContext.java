@@ -12,12 +12,14 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 
 public class JobContext<Key extends Comparable<Key>, Value> {
 	
-	final static int DEFAULT_NUM_MAPPER=1;
-	final static int DEFAULT_NUM_REDUCR=1;
+	final static int DEFAULT_NUM_MAPPER=2;
+	final static int DEFAULT_NUM_REDUCR=2;
 	
 	private int numOfMap=0;
 	private int numOfReduce=0;
@@ -58,6 +60,14 @@ public class JobContext<Key extends Comparable<Key>, Value> {
 		System.out.println("Setting Reducer..");
 		this.reducerClass = reducer;
 	}
+	
+	/**
+	 * Get the Output path for Job
+	 * @return
+	 */
+	public String getOutFilePath() {
+		return this.outPath;
+	}
 	/**
 	 * Assuming, for our implementation, Map & Reduce are required Classes
 	 * @throws Exception
@@ -67,11 +77,26 @@ public class JobContext<Key extends Comparable<Key>, Value> {
 			throw new Exception("No Mapper/Reducer Class found.. Implement and set default Mapper/Reducer..");
 		}
 		
-		// Implement multi-threaded write
-		System.out.println(this.numOfMap +" threads Spawned.. " );	
-//		ExecutorService exSrvc = Executors.newFixedThreadPool(this.numOfMap);
-				
-		this.parseAndMap();					//Parse File and Map Values			
+		if (this.numOfMap> 0) {
+			// Multithreaded Map
+			System.out.println((this.numOfMap+1) +" Mappers working.. " );	
+			ExecutorService mapExecutorService = Executors.newFixedThreadPool(this.numOfMap);
+			mapExecutorService.submit(() -> {
+				try {
+					this.parseAndMap();
+				} catch (Exception e) {
+					System.out.println("Error in Mapper: "+ e.getMessage());
+					e.printStackTrace();
+				}					//Parse File and Map Values			
+			});
+			mapExecutorService.shutdown();
+			mapExecutorService.awaitTermination(10, TimeUnit.SECONDS);		// Waiting for Mappers to finish			
+		}
+		else {
+			System.out.println("Single Mapper working..");
+			this.parseAndMap();			// Single threaded Map
+		}
+		
 		this.reduceAndWrite();				//Reduce Mapped values and Write to outfile	
 	}
 	
@@ -81,13 +106,7 @@ public class JobContext<Key extends Comparable<Key>, Value> {
 	 */
 	@SuppressWarnings("unchecked")
 	private void parseAndMap() throws Exception {
-		// Parse File
-		
-		// Step 1: Call Mapper Setup method 
-		this.mapperClass.setup(this);
-		
-		// Step 2: Call Mapper map method for each read line
-		System.out.println("Parsing input file: "+ this.inFile);
+		// Parse file - Call Mapper map method for each read line
 		try (BufferedReader br = new BufferedReader(new FileReader(this.inFile))) {
             String line;
             while ((line = br.readLine()) != null) {
@@ -108,10 +127,7 @@ public class JobContext<Key extends Comparable<Key>, Value> {
 		
 		Collections.sort(mapList);		// Sort and Shuffle Phase before reducing
 		
-		// Step 1: Call Reducer Setup method
-		this.reducerClass.setup(this);
-		
-		// Step 2: Call Reducer reduce method
+		// Call Reducer reduce method
 		List<Value> valList=null;
 		Key lastKey=null;
 		
@@ -132,8 +148,28 @@ public class JobContext<Key extends Comparable<Key>, Value> {
 				lastKey=kv.getKey();
 			}
 		}
+		
 		this.reducerClass.reduce(lastKey, valList, this);		// Write reduce for last element
-		this.writeToFile();
+		
+		// Writing data Parallely to file
+		if (this.numOfReduce>0) {
+			ExecutorService reduceExecutorService = Executors.newFixedThreadPool(this.numOfReduce);
+			
+			reduceExecutorService.submit(() -> {
+				try {
+					this.writeToFile();
+				} catch (Exception e) {
+					System.out.println("Error in Reducer: "+ e.getMessage());
+					e.printStackTrace();
+				}					//Parse File and Map Values			
+			});
+			reduceExecutorService.shutdown();
+			reduceExecutorService.awaitTermination(10, TimeUnit.SECONDS);			
+		}
+		else {
+			System.out.println("Single Reducer working..");
+			this.writeToFile();
+		}
 	}
 	
 	public void map(Key key, Value val) {
@@ -154,11 +190,15 @@ public class JobContext<Key extends Comparable<Key>, Value> {
 			if (null==this.outPath) {
 				throw new Exception("Empty Output Path. Please enter valid output path");
 			}
-			this.outPath = this.outPath + File.separator+this.reducerClass.getClass().getSimpleName().toLowerCase();
+			this.outPath = 	this.outPath + File.separator + 
+							this.reducerClass.getClass().getSimpleName().toLowerCase() + File.separator +
+							Thread.currentThread().getName();
 			
 			File file = new File(this.outPath);
-			if (!file.exists())
+			if (!file.exists()) {
 				file.getParentFile().mkdirs();
+				System.out.println(file.getParentFile());
+			}
 			this.writeToFile(file);			
 		} catch (Exception e) {
 			System.out.println("Error while writing to file: " + e.getMessage());
@@ -173,7 +213,7 @@ public class JobContext<Key extends Comparable<Key>, Value> {
 	 */
 	public void writeToFile(File file) throws Exception {
 		try {
-			System.out.println("Writing to file : "+ file.getAbsolutePath());
+			System.out.println("Output file : "+ file.getAbsolutePath());
 			PrintWriter writer = new PrintWriter(file);
 			for (Map.Entry<Key, Value> p:redList.entrySet()) {
 				writer.println(p.getKey() + " " + p.getValue());
