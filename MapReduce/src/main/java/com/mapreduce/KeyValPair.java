@@ -32,7 +32,7 @@ public class KeyValPair<Key extends Comparable<Key>, Value > implements Serializ
 	}
 
 	public int compareTo(KeyValPair<Key,Value> othr) {
-		return key.compareTo(othr.key);
+		return this.key.compareTo(othr.key);
 	}
 	
 	
