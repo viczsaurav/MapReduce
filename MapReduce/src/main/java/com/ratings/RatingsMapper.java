@@ -10,20 +10,9 @@ public class RatingsMapper implements Mapper<String, Float>{
 
 	@Override
 	public void map(String jsonLine, Float val, JobContext<String, Float> rateCntxt) throws Exception {
-		
-		System.out.println("Calling Ratings map method..");
-		
 		Gson g = new Gson();
 		RatingModel rateObj = g.fromJson(jsonLine, RatingModel.class);
-		System.out.println(rateObj.getMovieId() + ", " + rateObj.getRating());
-		rateCntxt.map(String.valueOf(rateObj.getMovieId()), new Float(rateObj.getRating()));	
-		
-	}
-
-	@Override
-	public void setup(JobContext<String, Float> cntxt) throws Exception {
-		// TODO Auto-generated method stub
-		
+		rateCntxt.map(String.valueOf(rateObj.getMovieId()), new Float(rateObj.getRating()));
 	}
 
 }
