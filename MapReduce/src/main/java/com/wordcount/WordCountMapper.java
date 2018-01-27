@@ -14,9 +14,4 @@ public class WordCountMapper implements Mapper<String, Integer>{
 		}
 	}
 
-	@Override
-	public void setup(JobContext<String, Integer> cntxt) throws Exception {
-				
-	}
-
 }

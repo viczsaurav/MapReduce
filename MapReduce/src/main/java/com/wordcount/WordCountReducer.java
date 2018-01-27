@@ -6,13 +6,6 @@ import com.mapreduce.Reducer;
 public class WordCountReducer implements Reducer<String, Integer, String, Integer> {
 
 	private static final long serialVersionUID = -3904724828336643593L;
-
-
-	@Override
-	public void setup(JobContext<String, Integer> cntxt) throws Exception {
-		// TODO Auto-generated method stub
-		
-	}
 	
 	public void reduce(String word, Iterable<Integer> values, JobContext<String,Integer> cntxt) {
 		int totalVal=0;
